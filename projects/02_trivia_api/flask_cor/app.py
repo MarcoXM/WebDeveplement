@@ -32,6 +32,7 @@ def create_app(test_config=None):
     
 
     ### getting the total infomations of the books in the store
+
     @app.route('/books',methods=['GET'])
     def get_books_info():
         
@@ -44,7 +45,7 @@ def create_app(test_config=None):
         else:
             return jsonify({
                 'sussess': True,
-                'total books amount' : len(selections),
+                'total books' : len(selections),
                 'book info': books
             })
 
@@ -112,7 +113,7 @@ def create_app(test_config=None):
             abort(404)
 
     @app.route('/books', methods = ['POST'])
-    def delete_book():
+    def create_book():
         '''
         curl -X PATCH http://127.0.0.1:5000/books/1 -H "Content-Type: application/json" -d '{"name":"Harry Potter"}' 
         '''
@@ -120,20 +121,32 @@ def create_app(test_config=None):
         book_name = body.get('name')
         book_author = body.get('author')
         book_genre = body.get('genre')
+        search = body.get('search',None)
 
         try:
-            book = Book(name=book_name,author=book_author,genre=book_genre)
-            book.insert()
+            if search :
+                selections = Book.query.order_by(Book.id).filter(Book.name.ilike("%{}%".format(search)))
+                current_books = paginate_book(request,selections)
+                return jsonify({
+                    'success': True,
+                    "inserted": Book.id,
+                    "books info " : current_books,
+                    "total_books":len(selections)
+                })
 
-            selections = Book.query.order_by(Book.id).all()
-            current_books = paginate_book(request,selections)
+            else:
+                book = Book(name=book_name,author=book_author,genre=book_genre)
+                book.insert()
 
-            return jsonify({
-                'success': True,
-                "inserted": book.id,
-                "books info " : current_books,
-                "total_books":len(selections)
-            })
+                selections = Book.query.order_by(Book.id).all()
+                current_books = paginate_book(request,selections)
+
+                return jsonify({
+                    'success': True,
+                    "inserted": book.id,
+                    "books info " : current_books,
+                    "total_books":len(selections)
+                })
         except:
             abort(422)
 

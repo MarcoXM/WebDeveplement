@@ -77,7 +77,7 @@ class QuestionView extends Component {
 
   submitSearch = (searchTerm) => {
     $.ajax({
-      url: `/questions/search`, //TODO: update request URL
+      url: `/questions`, //TODO: update request URL
       type: "POST",
       dataType: 'json',
       contentType: 'application/json',
@@ -125,11 +125,11 @@ class QuestionView extends Component {
           <h2 onClick={() => {this.getQuestions()}}>Categories</h2>
           <ul>
             {
-              Object.values(this.state.categories).map(id =>
+              Object.keys(this.state.categories).map((cate) =>
                   (
-                      <li key={id['id']} onClick={() => this.getByCategory(id['id'])}>
-                        {id['type']}
-                        <img className="category" src={id['type']+'.svg'}/>
+                      <li key={cate} onClick={() => {this.getByCategory(cate)}}>
+                        {this.state.categories[cate]}
+                        <img className="category" src={`${this.state.categories[cate].toLowerCase()}.svg`} alt="category logo"/>
                       </li>
                   )
               )
@@ -140,12 +140,13 @@ class QuestionView extends Component {
         </div>
         <div className="questions-list">
           <h2>Questions</h2>
-          {Object.values(this.state.questions).map(q =>
+          
+          {this.state.questions.map((q, ind) =>
                 (<Question
                     key={q['id']}
                     question={q['question']}
                     answer={q['answer']}
-                    category={this.state.categories[q.category]} 
+                    category={this.state.categories[q.category]}
                     difficulty={q.difficulty}
                     questionAction={this.questionAction(q.id)}
                 />)

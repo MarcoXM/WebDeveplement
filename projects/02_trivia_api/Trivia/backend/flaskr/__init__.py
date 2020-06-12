@@ -57,7 +57,7 @@ def create_app(test_config=None):
         questions_selection = Question.query.order_by(Question.id).all()
         current_questions = paginate(request, questions_selection)
         categories = Category.query.all()
-        current_categories = paginate(request, categories)
+        categories = {category.id: category.type for category in categories}
         if not current_questions:
             abort(422)
         
@@ -66,7 +66,7 @@ def create_app(test_config=None):
                 "success":True,
                 "total_questions":len(questions_selection),
                 "questions":current_questions,
-                "categories":current_categories,
+                "categories":categories,
                 "current_category":category
             })
 
@@ -109,21 +109,20 @@ def create_app(test_config=None):
 
             return jsonify({
                     'success': True,
+                    "new_question_id":question.id,
                     'message': 'Question added successfully'
                 })
         except ValueError:
             print(sys.exc_info())
             abort(500)
 
-    @app.route("/questions/search", methods=["POST"])
+    @app.route("/questions", methods=["POST"])
     def search_questions():
         body = request.get_json()
-        # question_text = body['question']
-        # question_answer = body['answer']
-        # question_cate = body['category']
-        # question_difficulty = body['difficulty']
+
         try:
             search = body['searchTerm']
+            print(search)
             query = "%" + search + "%"
             questions_selection = Question.query.with_entities(Question, Category)\
                                 .join(Category, Category.id == Question.category)\
@@ -173,36 +172,42 @@ def create_app(test_config=None):
     @app.route("/quiz", methods=["POST"])
     def play_quiz():
         body = request.get_json()
-        prev_questions = body['previous_questions']
-        previous_ids = [q['id'] for q in prev_questions] if prev_questions else []
-        qc_type = body['quiz_category']['type']
-        qc_id = body['quiz_category']['type_id']
-        random.seed(224)
-        if qc_id == 0:
-            questions = Question.query.all()
-            while True:
-                question = random.choice(questions)
-                if question.id in previous_ids:
-                    continue
+        print(body)
+        try: 
+            
+            prev_questions = body['previous_questions']
+            qc_id = body['quiz_category']['id']
+            print(prev_questions,qc_id)
+            category = Category.query.get(int(qc_id))
+            random.seed(224)
+            if qc_id == 0:
+                if "previous_questions" in body and len(prev_questions) > 0: 
+                    questions = Question.query.filter(
+                        Question.id.notin_(prev_questions),
+                        Question.category == category.id
+                    ).all()
                 else:
-                    break
-        else:
-            questions = Question.query.filter(Question.category == qc_id).all()
-            while True:
-                question = random.choice(questions)
-                if len(prev_questions) == len(questions):
-                    question = ''
-                    break
-                elif question.id in previous_ids:
-                    continue
+                    questions = Question.query.filter(
+                        Question.category == category.id).all()
+            else:
+                if "previous_questions" in body and len(prev_questions) > 0:  
+                    questions = Question.query.filter(
+                        Question.id.notin_(prev_questions)
+                    ).all()
                 else:
-                    break
-                
-        return jsonify({
-            "success":True,
-            "previous_questions":prev_questions,
-            "question":question.format() if question else ""
-        })
+                    questions = Question.query.all()
+            max = len(questions) - 1
+            if max > 0:
+                question = questions[random.randint(0, max)].format()
+            else:
+                question = False
+            return jsonify({
+                "success": True,
+                "question": question
+            })
+
+        except Exception:
+            abort(500, "An error occured while trying to load the next question")
 
 
     @app.errorhandler(400)

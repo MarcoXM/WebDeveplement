@@ -18,6 +18,21 @@ class TriviaTestCase(unittest.TestCase):
         self.database_path = "postgres://marco:123456@{}/{}".format('localhost:5432', self.database_name)
         setup_db(self.app, self.database_path)
 
+        self.quiz_data = {
+            'previous_questions': [],
+            'quiz_category': {
+                'type': 'Art',
+                'id': '2'
+            }
+        }
+
+        self.quiz_data_missing_values = {
+            'previous_questions': []
+            # missing quiz_category
+        }
+
+
+
         # binds the app to the current context
         with self.app.app_context():
             self.db = SQLAlchemy()
@@ -79,7 +94,7 @@ class TriviaTestCase(unittest.TestCase):
 
 
     def test_search_questions(self):
-        res = self.client().post("/questions/search", json ={
+        res = self.client().post("/questions", json ={
            "searchTerm" : "what" 
         })
         data = json.loads(res.data)
@@ -101,24 +116,13 @@ class TriviaTestCase(unittest.TestCase):
 
     def test_play_quiz(self):
         ## first time 
-        res = self.client().post("/quiz", json = {
-            "previous_questions":[],
-            "quiz_category": {
-                "type": "Entertainment",
-                "type_id" : 5
-            }
-        })
+        res = self.client().post('/quiz', json=self.quiz_data)
         data = json.loads(res.data)
-        res1 = self.client().post("/quiz", json = {
-               "previous_questions": [data['question']],
-               'quiz_category': {
-                   'type': 'Entertainment', 'type_id': 5
-            }
-        })
-        data1 = json.loads(res1.data)
+
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(data['question']['category'], data1['previous_questions'][-1]['category'])
-        self.assertEqual(data['question']['id'], data1['previous_questions'][-1]['id'])
+        self.assertEqual(data['success'], True)
+        self.assertTrue(data['question'])
+
 
 
     def test_error_404_not_found(self):
@@ -138,7 +142,7 @@ class TriviaTestCase(unittest.TestCase):
 
 
     def test_error_500_Internal_Server(self):
-        res = self.client().post('/questions/search', json={'seaTerm': 'what'})
+        res = self.client().post('/questions', json={'seaTerm': 'what'})
         data = json.loads(res.data)
         self.assertEqual(res.status_code, 500)
         self.assertEqual(data['success'], False)

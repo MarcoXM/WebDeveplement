@@ -23,7 +23,7 @@ class QuestionView extends Component {
 
   getQuestions = () => {
     $.ajax({
-      url: `/questions?page=${this.state.page}`, //TODO: update request URL
+      url: `/questions?page=${this.state.page}`,
       type: "GET",
       success: (result) => {
         this.setState({
@@ -39,7 +39,6 @@ class QuestionView extends Component {
       }
     })
   }
-
   selectPage(num) {
     this.setState({page: num}, () => this.getQuestions());
   }
@@ -78,7 +77,7 @@ class QuestionView extends Component {
 
   submitSearch = (searchTerm) => {
     $.ajax({
-      url: `/questions`, //TODO: update request URL
+      url: `/questions/search`, //TODO: update request URL
       type: "POST",
       dataType: 'json',
       contentType: 'application/json',
@@ -125,27 +124,33 @@ class QuestionView extends Component {
         <div className="categories-list">
           <h2 onClick={() => {this.getQuestions()}}>Categories</h2>
           <ul>
-            {Object.keys(this.state.categories).map((id, ) => (
-              <li key={id} onClick={() => {this.getByCategory(id)}}>
-                {this.state.categories[id]}
-                <img className="category" src={`${this.state.categories[id]}.svg`}/>
-              </li>
-            ))}
+            {
+              Object.values(this.state.categories).map(id =>
+                  (
+                      <li key={id['id']} onClick={() => this.getByCategory(id['id'])}>
+                        {id['type']}
+                        <img className="category" src={id['type']+'.svg'}/>
+                      </li>
+                  )
+              )
+            }
+
           </ul>
           <Search submitSearch={this.submitSearch}/>
         </div>
         <div className="questions-list">
           <h2>Questions</h2>
-          {this.state.questions.map((q, ind) => (
-            <Question
-              key={q.id}
-              question={q.question}
-              answer={q.answer}
-              category={this.state.categories[q.category]} 
-              difficulty={q.difficulty}
-              questionAction={this.questionAction(q.id)}
-            />
-          ))}
+          {Object.values(this.state.questions).map(q =>
+                (<Question
+                    key={q['id']}
+                    question={q['question']}
+                    answer={q['answer']}
+                    category={this.state.categories[q.category]} 
+                    difficulty={q.difficulty}
+                    questionAction={this.questionAction(q.id)}
+                />)
+
+          )}
           <div className="pagination-menu">
             {this.createPagination()}
           </div>

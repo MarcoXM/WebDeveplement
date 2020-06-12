@@ -86,7 +86,7 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertEqual(data["success"], True)
         self.assertTrue(len(data["questions"]))
-
+        self.assertTrue(data["total_questions"])
 
     def test_get_question_by_category(self):
         res = self.client().get("/categories/1/questions")
@@ -128,6 +128,7 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data['success'], False)
         self.assertEqual(data['message'], 'Resource not found')
 
+
     def test_error_422_unprocessable(self):
         res = self.client().get('/questions?page=100')
         data = json.loads(res.data)
@@ -135,8 +136,9 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data['success'], False)
         self.assertEqual(data['message'], 'Unprocessable')
 
+
     def test_error_500_Internal_Server(self):
-        res = self.client().post('/questions', json={'seahTerm': 'what'})
+        res = self.client().post('/questions/search', json={'seaTerm': 'what'})
         data = json.loads(res.data)
         self.assertEqual(res.status_code, 500)
         self.assertEqual(data['success'], False)

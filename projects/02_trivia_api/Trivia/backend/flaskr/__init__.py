@@ -53,17 +53,21 @@ def create_app(test_config=None):
 
     @app.route("/questions", methods=['GET'])
     def get_questions():
+        category = request.args.get('category', 'All', type=str)
         questions_selection = Question.query.order_by(Question.id).all()
         current_questions = paginate(request, questions_selection)
-
+        categories = Category.query.all()
+        current_categories = paginate(request, categories)
         if not current_questions:
             abort(422)
-
+        
         else:
             return jsonify({
                 "success":True,
                 "total_questions":len(questions_selection),
-                "questions":current_questions
+                "questions":current_questions,
+                "categories":current_categories,
+                "current_category":category
             })
 
 
@@ -118,19 +122,23 @@ def create_app(test_config=None):
         # question_answer = body['answer']
         # question_cate = body['category']
         # question_difficulty = body['difficulty']
-        search = body['searchTerm']
         try:
-            questions_selection = Question.query.order_by(Question.id).filter(Question.question.ilike("%{}%".format(search))).all()
+            search = body['searchTerm']
+            query = "%" + search + "%"
+            questions_selection = Question.query.with_entities(Question, Category)\
+                                .join(Category, Category.id == Question.category)\
+                                .filter(Question.question.ilike(query)).all()
             if len(questions_selection) == 0:
                 return abort(404)
-            current_questions = paginate(request,questions_selection)
+            current_questions = [q.Question.format() for q in questions_selection]
             return jsonify({
                 "success":True,
-                "total_questions":len(questions_selection),
                 "questions":current_questions,
+                "total_questions":len(questions_selection),
+                "current_category":questions_selection[0].Category.type,
             })
         except:
-            abort(404)
+            abort(500)
 
 
     @app.route("/categories/<int:category_id>/questions", methods=['GET'])

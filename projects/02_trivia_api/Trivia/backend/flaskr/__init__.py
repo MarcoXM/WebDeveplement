@@ -176,11 +176,10 @@ def create_app(test_config=None):
         try: 
             
             prev_questions = body['previous_questions']
-            qc_id = body['quiz_category']['id']
-            print(prev_questions,qc_id)
-            category = Category.query.get(int(qc_id))
+            category_id = body['quiz_category']['id']
+            category = Category.query.get(category_id)
             random.seed(224)
-            if qc_id == 0:
+            if not category == None:
                 if "previous_questions" in body and len(prev_questions) > 0: 
                     questions = Question.query.filter(
                         Question.id.notin_(prev_questions),

@@ -26,13 +26,6 @@ class TriviaTestCase(unittest.TestCase):
             }
         }
 
-        self.quiz_data_missing_values = {
-            'previous_questions': []
-            # missing quiz_category
-        }
-
-
-
         # binds the app to the current context
         with self.app.app_context():
             self.db = SQLAlchemy()
@@ -44,10 +37,6 @@ class TriviaTestCase(unittest.TestCase):
         """Executed after reach test"""
         pass
 
-    """
-    TODO
-    Write at least one test for each test for successful operation and for expected errors.
-    """
     def test_get_categories_info(self):
         res = self.client().get("/categories")
         data = json.loads(res.data)
@@ -123,6 +112,13 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data['success'], True)
         self.assertTrue(data['question'])
 
+    def test_get_questions_by_invalid_catgeory(self):
+        res = self.client().get('/categories/invalidId/questions')
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 404)
+        self.assertEqual(data['success'], False)
+        self.assertEqual(data['message'], 'Resource not found')
 
 
     def test_error_404_not_found(self):
